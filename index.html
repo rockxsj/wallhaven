@@ -142,7 +142,6 @@
     let lastListQueryParams = ''
     async function query(init = false, passParams = {}, passResMeta = {}) {
         const notTiming = Object.entries(passParams).length === 0   // 非定时任务触发
-        console.log(init, passParams, passResMeta, notTiming)
         if (notTiming) {
             params = buildQuery(init)
         } else {
@@ -167,7 +166,6 @@
         }
         document.querySelector('#img-list-loading').style.display = 'block'
         const uri = baseUri + queryParams
-        console.log('请求的列表url为：', uri)
         return fetch(uri).then(res => {
             return res.json()
         }).then(json => {
