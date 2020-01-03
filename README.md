@@ -38,9 +38,10 @@ windows 10 & mac OS 10.12以上支持按照设定的条件和更新周期自动�
 最后，如果有人知道有什么办法可以实现linux下和更低版本的windows、mac OS支持或者知道怎么设置为锁屏，欢迎提issue或者邮箱联系，邮箱地址：rockxsj#gmail.com。
 
 ## ScreenShot
-![UTOOLS1578032217254.png](https://user-gold-cdn.xitu.io/2020/1/3/16f6a0cb905daca8?w=2880&h=1800&f=png&s=3541085)
-![UTOOLS1578032254791.png](https://user-gold-cdn.xitu.io/2020/1/3/16f6a0d47430599d?w=2878&h=1795&f=png&s=2610213)
-![UTOOLS1578032311551.png](https://user-gold-cdn.xitu.io/2020/1/3/16f6a0e3088e547e?w=2865&h=1800&f=png&s=4438309)
+![labFIJ.png](https://s2.ax1x.com/2020/01/03/labFIJ.png)
+![labnsK.png](https://s2.ax1x.com/2020/01/03/labnsK.png)
+![labQde.png](https://s2.ax1x.com/2020/01/03/labQde.png)
+![labUL8.png](https://s2.ax1x.com/2020/01/03/labUL8.png)
 
 
 ## TODO
