@@ -123,3 +123,32 @@ window.setLockScreenFact = function(url, fileSize) {
 window.setBothFact = function(url, fileSize) {
     utools.showNotification('暂不支持同时设置锁屏', clickFeatureCode = null, silent = false)
 }
+
+/**
+ * 设置定时更换壁纸任务
+ */
+window.setAutoChangeFact = function(timing, params, resMeta) {
+    let timingConfig = utools.db.get('timing_config')
+    const dbObj = {
+        _id: 'timing_config',
+        data: {
+            timing,
+            params,
+            resMeta
+        }
+    }
+    if (!timingConfig) {
+        timingConfig = utools.db.put(dbObj)
+        return timingConfig
+    }
+    dbObj._rev = timingConfig._rev
+    timingConfig = utools.db.put(dbObj)
+    return timingConfig
+}
+
+/**
+ * 获取定时更换壁纸任务
+ */
+window.getAutoChangeFact = function() {
+    return utools.db.get('timing_config')
+}

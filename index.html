@@ -41,6 +41,8 @@
                         <input id="ratios-y" type="text" class="input is-small" style="width: 2rem" />
                     </span>
                 </div>
+            </div>
+            <div class="columns is-desktop is-centered">
                 <div class="column is-narrow">
                     <label>颜色：</label>
                     <span class="select is-small">
@@ -60,8 +62,20 @@
                     </span>
                 </div>
                 <div class="column is-narrow">
-                    <input id="input-q" type="text" class="input is-small" onkeyup="if(event.keyCode === 13) query(true)" placeholder="关键词" style="width: 8rem;" />
+                    <input id="input-q" type="text" class="input is-small"
+                        onkeyup="if(event.keyCode === 13) query(true)" placeholder="关键词" style="width: 8rem;" />
                     <button class="button is-primary is-small" onclick="query(true)">搜索</button>
+                    <span class="select is-small">
+                        <select id="timing-set" onchange="setAutoChange(this.value)">
+                            <option value="0">不自动切换</option>
+                            <option value="900">15分钟</option>
+                            <option value="1800">30分钟</option>
+                            <option value="3600">1小时</option>
+                            <option value="10800">3小时</option>
+                            <option value="43200">12小时</option>
+                            <option value="86400">一天</option>
+                        </select>
+                    </span>
                 </div>
             </div>
         </div>
@@ -83,17 +97,22 @@
         <div class="modal-content" style="width: 800px;">
             <span style="display: flex; justify-content: center; margin-bottom: 1rem;">
                 <button class="button is-primary is-small" onclick="setWallPaper()">背景</button>
-                <button style="margin-left: 0.5rem;" class="button is-info is-small" onclick="setLockScreen()">锁屏</button class="button" is-primary>
-                <button style="margin-left: 0.5rem;" class="button is-success is-small" onclick="setBoth()">背景和锁屏</button class="button" is-primary>
-                <button style="margin-left: 0.5rem;" class="button is-warning is-small" onclick="saveImage()">保存</button class="button" is-primary>
-                <button style="margin-left: 0.5rem;" class="button is-link is-small" onclick="copyImage()">复制</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-info is-small"
+                    onclick="setLockScreen()">锁屏</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-success is-small"
+                    onclick="setBoth()">背景和锁屏</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-warning is-small" onclick="saveImage()">保存</button
+                    class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-link is-small" onclick="copyImage()">复制</button
+                    class="button" is-primary>
             </span>
             <p class="image" style="display: flex; justify-content: center;">
                 <img id="img-loading" src="loading.gif" style="width: 50px;" />
                 <img id="img-origin" src="#" />
             </p>
         </div>
-        <button class="modal-close is-large" aria-label="close" onclick="document.querySelector('#img-modal').classList.remove('is-active')"></button>
+        <button class="modal-close is-large" aria-label="close"
+            onclick="document.querySelector('#img-modal').classList.remove('is-active')"></button>
     </div>
 </body>
 
@@ -104,7 +123,6 @@
 
     const baseUri = 'https://wallhaven.cc/api/v1/search?'
     let resMeta = {}
-
     const options = {
         categories: ['常规', '动漫', '人物'],
         purity: ['SFW', '粗略', 'NSFW'],
@@ -116,44 +134,50 @@
         topRange: { '最近一天': '1d', '最近三天': '3d', '最近一周': '1w', '最近一个月': '1M', '最近三个月': '3M', '最近半年': '6M', '最近一年': '1y' }, // 当sorting为toplist有效
         colors: ['', '#660000', '#990000', '#cc0000', '#cc3333', '#ea4c88', '#993399', '#663399', '#333399', '#0066cc', '#0099cc', '#66cccc', '#77cc33', '#669900', '#336600', '#666600', '#999900', '#cccc33', '#ffff00', '#ffcc33', '#ff9900', '#ff6600', '#cc6633', '#996633', '#663300', '#000000', '#999999', '#cccccc', '#ffffff', '#424153']
     }
-    let params = {
+    const filterParams = {
         categories: '100',
-        purity: '100',
-        atleast: '',
-        resolutions: '',
-        ratios: '',
-        sorting: 'random',
-        order: 'desc',
-        topRange: '',
-        colors: ''
+        purity: '100'
     }
-
     let currentImage = {}
     let lastListQueryParams = ''
-    function query(init = false) {
-        buildQuery(init)
-        if (params.page > resMeta.last_page) {
+    async function query(init = false, passParams = {}, passResMeta = {}) {
+        const notTiming = Object.entries(passParams).length === 0   // 非定时任务触发
+        console.log(init, passParams, passResMeta, notTiming)
+        if (notTiming) {
+            params = buildQuery(init)
+        } else {
+            params = passParams
+        }
+        const lastPage = notTiming ? resMeta.last_page : passResMeta.last_page // 定时任务传入的则直接取
+        if (params.page > lastPage) {
             return  // 已经到了最后一页
         }
         const queryParams = object2URL(params)
-        if (lastListQueryParams === queryParams) {
+        if (notTiming && lastListQueryParams === queryParams) {
             return  // 防止过多并发请求
         }
-        lastListQueryParams = queryParams
+        if (notTiming) {
+            lastListQueryParams = queryParams
+        }
         const listDom = document.querySelector('#list')
         if (init) {
-            while(listDom.lastChild) {
+            while (listDom.lastChild) {
                 listDom.removeChild(listDom.lastChild)
             }
         }
         document.querySelector('#img-list-loading').style.display = 'block'
-        fetch(baseUri + queryParams).then(res => {
+        const uri = baseUri + queryParams
+        console.log('请求的列表url为：', uri)
+        return fetch(uri).then(res => {
             return res.json()
         }).then(json => {
             if (!json.data || json.data.length === 0) {
                 console.warn('暂无数据')
                 document.querySelector('#img-list-loading').style.display = 'none'
                 return;
+            }
+            if (!notTiming) {
+                return {'urls': json.data.map(each => ({'url': each.path, 'size': each.file_size})), 'meta': json.meta}
             }
             resMeta = json.meta
             json.data.forEach(each => {
@@ -164,6 +188,17 @@
     }
 
     function buildQuery(init) {
+        const params = {
+            categories: filterParams['categories'] || '100',
+            purity: filterParams['purity'] || '100',
+            atleast: '',
+            resolutions: '',
+            ratios: '',
+            sorting: 'random',
+            order: 'desc',
+            topRange: '',
+            colors: ''
+        }
         const resc = document.querySelector('#resolutions-condition').value
         const resx = document.querySelector('#resolutions-x').value || document.querySelector('#resolutions-x').getAttribute('placeholder')
         const resy = document.querySelector('#resolutions-y').value || document.querySelector('#resolutions-y').getAttribute('placeholder')
@@ -191,6 +226,7 @@
         params.colors = color
         params.order = order
         params.page = init ? 1 : resMeta.current_page + 1
+        return params
     }
 
     function createThumbsItem(item) {
@@ -246,6 +282,40 @@
         window.setBothFact(currentImage.originSrc, currentImage.fileSize)
     }
 
+    function setAutoChange(value) {
+        const timing = parseInt(value)
+        window.setAutoChangeFact(timing, params, resMeta)
+        timingChangeDo(timing, params, resMeta)
+    }
+
+    let intervalID = 0
+    function timingChangeDo(timing, params, resMeta) {
+        if (intervalID !== 0) {
+            clearInterval(intervalID)
+        }
+        if (timing === 0) {
+            return
+        }
+        let wallpaperList = []
+        intervalID = setInterval(async () => {
+            if (wallpaperList.length < 5) {
+                const ret = await query(params.page === 1, params, resMeta)
+                wallpaperList = wallpaperList.concat(ret.urls)
+
+                params.page += 1
+                resMeta = ret.meta
+                window.setAutoChangeFact(timing, params, resMeta)
+            }
+            if (wallpaperList.length === 0) {
+                console.log('已经没有可以自动更换的壁纸了')
+                return
+            }
+            const wallpaper = wallpaperList.shift()
+            await window.downloadImageFact(wallpaper.url, wallpaper.size)
+            window.setWallPaperFact(wallpaper.url, wallpaper.size)
+        }, timing * 1000)
+    }
+
     window.onload = () => {
         // 排序方案
         const orderSelect = document.querySelector('#order-select')
@@ -284,9 +354,9 @@
                     e.target.classList.remove('is-dark')
                     e.target.classList.add('is-light')
                 }
-                const value = params[e.target.dataset['field']].split('')
+                const value = filterParams[e.target.dataset['field']].split('')
                 value[e.target.dataset['index']] = newChar
-                params[e.target.dataset['field']] = value.join('')
+                filterParams[e.target.dataset['field']] = value.join('')
             })
         })
 
@@ -298,6 +368,15 @@
             query()
         }
     }
+
+    utools.onPluginEnter(({ code, type, payload }) => {
+        utools.setSubInput(() => {}, "建议分离插件，并最大化后使用！", false, true)
+        const timingConfig = window.getAutoChangeFact()
+        if (!timingConfig) {
+            return
+        }
+        timingChangeDo(timingConfig.data.timing, timingConfig.data.params, timingConfig.data.resMeta)
+    })
 </script>
 
 </html>
