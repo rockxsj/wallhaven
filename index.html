@@ -86,7 +86,7 @@
     <section style="margin-top: 1.5rem;">
         <div class="container">
             <div class="columns is-centered">
-                <img src="loading-list.gif" style="width: 50px;" />
+                <img id="img-list-loading" src="loading-list.gif" style="width: 50px;" />
             </div>
         </div>
     </section>
@@ -141,26 +141,37 @@
     }
 
     let currentImage = {}
-
+    let lastListQueryParams = ''
     function query(init = false) {
         buildQuery(init)
+        if (params.page > resMeta.last_page) {
+            return  // 已经到了最后一页
+        }
         const queryParams = object2URL(params)
+        if (lastListQueryParams === queryParams) {
+            return  // 防止过多并发请求
+        }
+        lastListQueryParams = queryParams
+        const listDom = document.querySelector('#list')
+        if (init) {
+            while(listDom.lastChild) {
+                listDom.removeChild(listDom.lastChild)
+            }
+        }
+        document.querySelector('#img-list-loading').style.display = 'block'
         fetch(baseUri + queryParams).then(res => {
             return res.json()
         }).then(json => {
-            const listDom = document.querySelector('#list')
             if (!json.data || json.data.length === 0) {
-                document.querySelector('#list').innerHTML = ""
-                console.log('暂无数据')
+                console.warn('暂无数据')
+                document.querySelector('#img-list-loading').style.display = 'none'
                 return;
-            }
-            if (init) {
-                document.querySelector('#list').innerHTML = ""
             }
             resMeta = json.meta
             json.data.forEach(each => {
                 listDom.appendChild(createThumbsItem(each))
-            });
+            })
+            document.querySelector('#img-list-loading').style.display = 'none'
         })
     }
 
