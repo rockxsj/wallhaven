@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="bulma.min.css">
+    <style>
+        .list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .form {
+            display: inline-flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <section style="margin-top: 1.5rem;">
+        <div class="container is-fluid is-fullhd">
+            <div class="columns is-desktop is-centered">
+                <div class="column is-narrow selector">
+                    <button class="button is-small is-info is-dark" data-field="categories" data-index="0">常规</button>
+                    <button class="button is-small is-info is-light" data-field="categories" data-index="1">动漫</button>
+                    <button class="button is-small is-info is-light" data-field="categories" data-index="2">人物</button>
+                </div>
+                <div class="column is-narrow selector">
+                    <button class="button is-small is-info is-dark" data-field="purity" data-index="0">SFW</button>
+                    <button class="button is-small is-info is-light" data-field="purity" data-index="1">粗略</button>
+                    <button class="button is-small is-info is-light" data-field="purity" data-index="2">NSFW</button>
+                </div>
+                <div class="column is-narrow">
+                    <label>分辨率：</label>
+                    <span class="select is-small">
+                        <select id="resolutions-condition">
+                            <option value="atleast">至少</option>
+                            <option value="exactly">恰好</option>
+                        </select>
+                    </span>
+                    <span class="field control">
+                        <input id="resolutions-x" type="text" class="input is-small" style="width: 3rem" />
+                        X
+                        <input id="resolutions-y" type="text" class="input is-small" style="width: 3rem" />
+                    </span>
+                </div>
+                <div class="column is-narrow">
+                    <label>比例：</label>
+                    <span class="field control">
+                        <input id="ratios-x" type="text" class="input is-small" style="width: 2rem" />
+                        X
+                        <input id="ratios-y" type="text" class="input is-small" style="width: 2rem" />
+                    </span>
+                </div>
+                <div class="column is-narrow">
+                    <label>颜色：</label>
+                    <span class="select is-small">
+                        <select id="color-select"></select>
+                    </span>
+                </div>
+                <div class="column is-narrow">
+                    <label>排序：</label>
+                    <span class="select is-small">
+                        <select id="order-select"></select>
+                    </span>
+                    <span class="select is-small">
+                        <select id="order-direction-select">
+                            <option label="降序" value="desc"></option>
+                            <option label="升序" value="asc"></option>
+                        </select>
+                    </span>
+                </div>
+                <div class="column is-narrow">
+                    <input id="input-q" type="text" class="input is-small" onkeyup="if(event.keyCode === 13) query(true)" placeholder="关键词" style="width: 8rem;" />
+                    <button class="button is-primary is-small" onclick="query(true)">搜索</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section style="margin-top: 1.5rem;">
+        <div class="container">
+            <div class="is-fullhd is-multiline columns is-variable is-centered" id="list"></div>
+        </div>
+    </section>
+    <section style="margin-top: 1.5rem;">
+        <div class="container">
+            <div class="columns is-centered">
+                <img src="loading-list.gif" style="width: 50px;" />
+            </div>
+        </div>
+    </section>
+    <div id="img-modal" class="modal is-clipped">
+        <div class="modal-background"></div>
+        <div class="modal-content" style="width: 800px;">
+            <span style="display: flex; justify-content: center; margin-bottom: 1rem;">
+                <button class="button is-primary is-small" onclick="setWallPaper()">背景</button>
+                <button style="margin-left: 0.5rem;" class="button is-info is-small" onclick="setLockScreen()">锁屏</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-success is-small" onclick="setBoth()">背景和锁屏</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-warning is-small" onclick="saveImage()">保存</button class="button" is-primary>
+                <button style="margin-left: 0.5rem;" class="button is-link is-small" onclick="copyImage()">复制</button class="button" is-primary>
+            </span>
+            <p class="image" style="display: flex; justify-content: center;">
+                <img id="img-loading" src="loading.gif" style="width: 50px;" />
+                <img id="img-origin" src="#" />
+            </p>
+        </div>
+        <button class="modal-close is-large" aria-label="close" onclick="document.querySelector('#img-modal').classList.remove('is-active')"></button>
+    </div>
+</body>
+
+<script type="text/javascript" src="utils.js"></script>
+
+<script>
+    const devicePixelRatio = window.devicePixelRatio ? window.devicePixelRatio : 1
+
+    const baseUri = 'https://wallhaven.cc/api/v1/search?'
+    let resMeta = {}
+
+    const options = {
+        categories: ['常规', '动漫', '人物'],
+        purity: ['SFW', '粗略', 'NSFW'],
+        atleast: '',
+        resolutions: '',
+        ratios: '',
+        sorting: { '随机': 'random', '相关': 'relevance', '上传时间': 'date_added', '查看数': 'views', '收藏数': 'favorites', '热门': 'toplist' },
+        order: { '降序': 'desc', '升序': 'asc' },
+        topRange: { '最近一天': '1d', '最近三天': '3d', '最近一周': '1w', '最近一个月': '1M', '最近三个月': '3M', '最近半年': '6M', '最近一年': '1y' }, // 当sorting为toplist有效
+        colors: ['', '#660000', '#990000', '#cc0000', '#cc3333', '#ea4c88', '#993399', '#663399', '#333399', '#0066cc', '#0099cc', '#66cccc', '#77cc33', '#669900', '#336600', '#666600', '#999900', '#cccc33', '#ffff00', '#ffcc33', '#ff9900', '#ff6600', '#cc6633', '#996633', '#663300', '#000000', '#999999', '#cccccc', '#ffffff', '#424153']
+    }
+    let params = {
+        categories: '100',
+        purity: '100',
+        atleast: '',
+        resolutions: '',
+        ratios: '',
+        sorting: 'random',
+        order: 'desc',
+        topRange: '',
+        colors: ''
+    }
+
+    let currentImage = {}
+
+    function query(init = false) {
+        buildQuery(init)
+        const queryParams = object2URL(params)
+        fetch(baseUri + queryParams).then(res => {
+            return res.json()
+        }).then(json => {
+            const listDom = document.querySelector('#list')
+            if (!json.data || json.data.length === 0) {
+                document.querySelector('#list').innerHTML = ""
+                console.log('暂无数据')
+                return;
+            }
+            if (init) {
+                document.querySelector('#list').innerHTML = ""
+            }
+            resMeta = json.meta
+            json.data.forEach(each => {
+                listDom.appendChild(createThumbsItem(each))
+            });
+        })
+    }
+
+    function buildQuery(init) {
+        const resc = document.querySelector('#resolutions-condition').value
+        const resx = document.querySelector('#resolutions-x').value || document.querySelector('#resolutions-x').getAttribute('placeholder')
+        const resy = document.querySelector('#resolutions-y').value || document.querySelector('#resolutions-y').getAttribute('placeholder')
+        const ratx = document.querySelector('#ratios-x').value
+        const raty = document.querySelector('#ratios-y').value
+        const color = document.querySelector('#color-select').value
+        const sorting = document.querySelector('#order-select').value
+        const order = document.querySelector('#order-direction-select').value
+        const q = document.querySelector('#input-q').value
+
+        if (resc === 'atleast') {
+            params.resolutions = ''
+            params.atleast = `${resx}x${resy}`
+        } else {
+            params.atleast = ''
+            params.resolutions = `${resx}x${resy}`
+        }
+        if (ratx && raty) {
+            params.ratios = `${ratx}x${raty}`
+        } else {
+            params.ratios = ''
+        }
+        params.q = q
+        params.sorting = sorting
+        params.colors = color
+        params.order = order
+        params.page = init ? 1 : resMeta.current_page + 1
+    }
+
+    function createThumbsItem(item) {
+        const div = document.createElement('div')
+        div.setAttribute('class', 'column')
+        div.setAttribute('class', 'is-3')
+        const img = document.createElement('img')
+        img.setAttribute('src', item.thumbs.large)
+        img.setAttribute('origin-src', item.path)
+        img.setAttribute('file-size', item.file_size)
+        img.setAttribute('title', `查看数：${item.views}\n收藏数：${item.favorites}\n分辨率：${item.resolution}\n上传时间：${item.created_at}`)
+        img.addEventListener('click', (e) => {
+            document.querySelector('#img-modal').classList.add('is-active')
+            currentImage.originSrc = e.target.getAttribute('origin-src')
+            currentImage.src = e.target.getAttribute('src')
+            currentImage.fileSize = parseInt(e.target.getAttribute('file-size'))
+            document.querySelector('#img-origin').style.display = 'none'
+            document.querySelector('#img-loading').style.display = 'block'
+            downloadImage()
+        })
+        div.appendChild(img)
+        return div
+    }
+
+    async function downloadImage() {
+        try {
+            const ret = await window.downloadImageFact(currentImage.originSrc, currentImage.fileSize)
+            document.querySelector('#img-loading').style.display = 'none'
+            document.querySelector('#img-origin').setAttribute('src', ret)
+            document.querySelector('#img-origin').style.display = 'block'
+        } catch (error) {
+            // bypass
+        }
+    }
+
+    function saveImage() {
+        window.saveImageFact(currentImage.originSrc, currentImage.fileSize)
+    }
+
+    function copyImage() {
+        window.copyImageFact(currentImage.originSrc, currentImage.fileSize)
+    }
+
+    function setWallPaper() {
+        window.setWallPaperFact(currentImage.originSrc, currentImage.fileSize)
+    }
+
+    function setLockScreen() {
+        window.setLockScreenFact(currentImage.originSrc, currentImage.fileSize)
+    }
+
+    function setBoth() {
+        window.setBothFact(currentImage.originSrc, currentImage.fileSize)
+    }
+
+    window.onload = () => {
+        // 排序方案
+        const orderSelect = document.querySelector('#order-select')
+        for (const name in options.sorting) {
+            if (options.sorting.hasOwnProperty(name)) {
+                const option = document.createElement('option')
+                option.setAttribute('value', options.sorting[name])
+                option.setAttribute('label', name)
+                orderSelect.appendChild(option)
+            }
+        }
+        // 默认分辨率和屏幕比例
+        document.querySelector('#resolutions-x').setAttribute('placeholder', window.screen.width * devicePixelRatio)
+        document.querySelector('#resolutions-y').setAttribute('placeholder', window.screen.height * devicePixelRatio)
+
+        // 颜色选择
+        const colorSelect = document.querySelector('#color-select')
+        options.colors.forEach(each => {
+            const option = document.createElement('option')
+            option.setAttribute('value', each)
+            option.setAttribute('label', each)
+            option.setAttribute('style', `background-color:${each}`)
+            colorSelect.appendChild(option)
+        })
+
+        // 图片类型条件
+        document.querySelectorAll('.selector > button').forEach(each => {
+            each.addEventListener('click', (e) => {
+                let newChar
+                if (Array.from(e.target.classList).includes('is-light')) {
+                    newChar = '1'
+                    e.target.classList.remove('is-light')
+                    e.target.classList.add('is-dark')
+                } else {
+                    newChar = '0'
+                    e.target.classList.remove('is-dark')
+                    e.target.classList.add('is-light')
+                }
+                const value = params[e.target.dataset['field']].split('')
+                value[e.target.dataset['index']] = newChar
+                params[e.target.dataset['field']] = value.join('')
+            })
+        })
+
+        query(true)
+    }
+
+    window.onscroll = () => {
+        if (getScrollTop() + getWindowHeight() == getScrollHeight()) {
+            query()
+        }
+    }
+</script>
+
+</html>

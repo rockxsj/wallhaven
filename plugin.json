@@ -1,0 +1,17 @@
+{
+	"pluginName": "最美壁纸",
+	"description": "在线查找壁纸、锁屏图片，自动更换壁纸、锁屏图片的插件。",
+	"main": "index.html",
+	"version": "0.1.0",
+	"preload":"preload.js",
+	"author": "rockxsj",
+	"homepage": "https://github.com/rockxsj/wallhaven",
+	"logo": "logo.png",
+	"features": [
+	    {
+			"code": "wallpaper",
+			"explain": "壁纸插件",
+	        "cmds":["wallpaper", "wp", "壁纸", "bg"]
+	    }
+	]
+}
