@@ -175,7 +175,7 @@
                 return;
             }
             if (!notTiming) {
-                return {'urls': json.data.map(each => ({'url': each.path, 'size': each.file_size})), 'meta': json.meta}
+                return { 'urls': json.data.map(each => ({ 'url': each.path, 'size': each.file_size })), 'meta': json.meta }
             }
             resMeta = json.meta
             json.data.forEach(each => {
@@ -368,7 +368,7 @@
     }
 
     utools.onPluginEnter(({ code, type, payload }) => {
-        utools.setSubInput(() => {}, "建议分离插件，并最大化后使用！", false, true)
+        utools.setSubInput(() => { }, "建议分离插件，并最大化后使用！", false, true)
         const timingConfig = window.getAutoChangeFact()
         if (!timingConfig) {
             return
